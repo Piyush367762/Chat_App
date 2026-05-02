@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ChatSpace</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">💬</div>
+    <h1>ChatSpace</h1>
+    <p>Enter a username to join the chat</p>
+    <input id="username-input" type="text" placeholder="Your username" maxlength="24" autocomplete="off"/>
+    <input id="room-input" type="text" placeholder="Room (default: general)" maxlength="32" autocomplete="off"/>
+    <button class="login-btn" onclick="joinChat()">Join Chat →</button>
+  </div>
+</div>
+<div id="sidebar">
+  <div class="sidebar-header">
+    <div class="logo">
+      <div class="logo-icon">💬</div>
+      ChatSpace
+    </div>
+  </div>
+  <div class="sidebar-section-label">Rooms</div>
+  <div class="room-list" id="room-list"></div>
+  <div class="add-room-btn" onclick="promptNewRoom()">
+    <span>＋</span> New Room
+  </div>
+  <div class="sidebar-footer">
+    <div class="avatar" id="user-avatar" style="background:#7c6af7;color:#fff;"></div>
+    <span class="username" id="sidebar-username">—</span>
+    <div class="status-dot"></div>
+  </div>
+</div>
+
+<div id="chat-area">
+  <div class="chat-header">
+    <div class="chat-header-left">
+      <span class="room-tag">#</span>
+      <span class="room-name" id="current-room-name">general</span>
+    </div>
+    <span class="online-count" id="online-count">0 online</span>
+  </div>
+  <div id="messages"></div>
+  <div id="typing-indicator"></div>
+  <div class="input-bar">
+    <div class="input-wrap">
+      <input id="msg-input" type="text" placeholder="Message #general" autocomplete="off" maxlength="500"/>
+    </div>
+    <button class="send-btn" onclick="sendMessage()">
+      <svg viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/></svg>
+    </button>
+  </div>
+</div>
+
+<div id="online-panel">
+  <div class="online-header">Online</div>
+  <div id="online-list"></div>
+</div>
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script src="index.js"></script>
+</body>
+</html>
