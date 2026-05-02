@@ -1,5 +1,5 @@
 
-const API = "chatapp-production-ad37.up.railway.app";
+const API = "https://chatapp-production-ad37.up.railway.app";
 let socket, currentUser, currentRoom = 'general';
 let typingTimeout;
 const COLORS = ['#7c6af7','#f472b6','#34d399','#60a5fa','#fb923c','#a78bfa','#38bdf8'];
