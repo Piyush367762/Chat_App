@@ -2,13 +2,8 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const http = require('http');
-const { Server } = require('socket.io');
 const path = require('path');
-
-// Load .env only in local dev — Railway injects env vars directly
-if (process.env.NODE_ENV !== 'production') {
-  require('dotenv').config();
-}
+const { Server } = require('socket.io');
 
 const app = express();
 const server = http.createServer(app);
@@ -20,44 +15,36 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// ─── MongoDB Connection ────────────────────────────────────────────────────────
+// ─── MongoDB ──────────────────────────────────────────────────────────────────
 const MONGO_URI = process.env.MONGO_URI;
 
 if (!MONGO_URI) {
-  console.error('FATAL: MONGO_URI environment variable is not set.');
+  console.error('FATAL: MONGO_URI is not set');
   process.exit(1);
 }
 
-mongoose.connect(MONGO_URI, {
-  serverSelectionTimeoutMS: 5000,
-})
-  .then(() => console.log('MongoDB connected successfully'))
-  .catch(err => {
-    console.error('MongoDB connection error:', err.message);
-    process.exit(1); // Exit so Railway restarts the container
-  });
+mongoose.connect(MONGO_URI)
+  .then(() => console.log('MongoDB connected'))
+  .catch(err => { console.error('MongoDB error:', err.message); process.exit(1); });
 
 mongoose.connection.on('disconnected', () => console.log('MongoDB disconnected'));
-mongoose.connection.on('reconnected', () => console.log('MongoDB reconnected'));
+mongoose.connection.on('reconnected',  () => console.log('MongoDB reconnected'));
 
-// ─── Models ────────────────────────────────────────────────────────────────────
-const userSchema = new mongoose.Schema({
-  username: { type: String, required: true, unique: true, trim: true },
-  avatar:   { type: String, default: '' },
+// ─── Models ───────────────────────────────────────────────────────────────────
+const User = mongoose.model('User', new mongoose.Schema({
+  username:  { type: String, required: true, unique: true, trim: true },
+  avatar:    { type: String, default: '' },
   createdAt: { type: Date, default: Date.now },
   lastSeen:  { type: Date, default: Date.now }
-});
+}));
 
-const messageSchema = new mongoose.Schema({
+const Message = mongoose.model('Message', new mongoose.Schema({
   room:      { type: String, required: true, default: 'general' },
   username:  { type: String, required: true },
   text:      { type: String, required: true, trim: true },
   avatar:    { type: String, default: '' },
   timestamp: { type: Date, default: Date.now }
-});
-
-const User    = mongoose.model('User', userSchema);
-const Message = mongoose.model('Message', messageSchema);
+}));
 
 // ─── REST Routes ──────────────────────────────────────────────────────────────
 app.get('/api/health', (req, res) => {
@@ -72,13 +59,11 @@ app.post('/api/users/join', async (req, res) => {
   try {
     const { username } = req.body;
     if (!username) return res.status(400).json({ error: 'Username required' });
-
     const user = await User.findOneAndUpdate(
       { username },
       { lastSeen: new Date() },
-      { returnDocument: 'after', upsert: true, setDefaultsOnInsert: true }  // fixed deprecated option
+      { returnDocument: 'after', upsert: true, setDefaultsOnInsert: true }
     );
-
     res.json({ success: true, user });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -87,12 +72,9 @@ app.post('/api/users/join', async (req, res) => {
 
 app.get('/api/messages/:room', async (req, res) => {
   try {
-    const { room } = req.params;
     const limit = parseInt(req.query.limit) || 50;
-    const messages = await Message.find({ room })
-      .sort({ timestamp: -1 })
-      .limit(limit)
-      .lean();
+    const messages = await Message.find({ room: req.params.room })
+      .sort({ timestamp: -1 }).limit(limit).lean();
     res.json(messages.reverse());
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -109,31 +91,20 @@ app.get('/api/rooms', async (req, res) => {
   }
 });
 
-// Fallback — serve index.html for any non-API route (SPA support)
-app.get('*', (req, res) => {
-  const indexPath = path.join(__dirname, 'public', 'index.html');
-  res.sendFile(indexPath, err => {
-    if (err) res.status(200).send('Server is running.');
-  });
-});
-
 // ─── Socket.IO ────────────────────────────────────────────────────────────────
 const onlineUsers = new Map();
 
 io.on('connection', (socket) => {
-  console.log(`Socket connected: ${socket.id}`);
+  console.log('Socket connected:', socket.id);
 
   socket.on('join', async ({ username, room = 'general' }) => {
     socket.join(room);
     onlineUsers.set(socket.id, { username, room });
-
     const messages = await Message.find({ room })
       .sort({ timestamp: -1 }).limit(50).lean();
     socket.emit('history', messages.reverse());
-
     io.to(room).emit('userJoined', { username, room });
     io.to(room).emit('onlineUsers', getOnlineInRoom(room));
-    console.log(`${username} joined room: ${room}`);
   });
 
   socket.on('message', async ({ username, text, room = 'general', avatar = '' }) => {
@@ -149,11 +120,9 @@ io.on('connection', (socket) => {
     socket.leave(oldRoom);
     socket.join(newRoom);
     onlineUsers.set(socket.id, { username, room: newRoom });
-
     const messages = await Message.find({ room: newRoom })
       .sort({ timestamp: -1 }).limit(50).lean();
     socket.emit('history', messages.reverse());
-
     io.to(oldRoom).emit('onlineUsers', getOnlineInRoom(oldRoom));
     io.to(newRoom).emit('onlineUsers', getOnlineInRoom(newRoom));
     io.to(newRoom).emit('userJoined', { username, room: newRoom });
@@ -169,7 +138,6 @@ io.on('connection', (socket) => {
       io.to(user.room).emit('onlineUsers', getOnlineInRoom(user.room));
       onlineUsers.delete(socket.id);
     }
-    console.log(`Socket disconnected: ${socket.id}`);
   });
 });
 
@@ -179,28 +147,17 @@ function getOnlineInRoom(room) {
     .map(u => u.username);
 }
 
-// ─── Graceful Shutdown (required for Railway) ─────────────────────────────────
+// ─── Graceful Shutdown ────────────────────────────────────────────────────────
 function shutdown(signal) {
-  console.log(`${signal} received. Shutting down gracefully...`);
+  console.log(`${signal} received, shutting down...`);
   server.close(() => {
-    mongoose.connection.close(false).then(() => {
-      console.log('MongoDB connection closed. Exiting.');
-      process.exit(0);
-    });
+    mongoose.connection.close(false).then(() => process.exit(0));
   });
-
-  // Force exit after 10s if graceful shutdown hangs
-  setTimeout(() => {
-    console.error('Forced exit after timeout.');
-    process.exit(1);
-  }, 10000);
+  setTimeout(() => process.exit(1), 10000);
 }
-
 process.on('SIGTERM', () => shutdown('SIGTERM'));
 process.on('SIGINT',  () => shutdown('SIGINT'));
 
 // ─── Start ────────────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, '0.0.0.0', () => {   // 0.0.0.0 required on Railway
-  console.log(`Server running on port ${PORT}`);
-});
+server.listen(PORT, '0.0.0.0', () => console.log(`Server running on port ${PORT}`));
