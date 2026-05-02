@@ -53,7 +53,7 @@ app.post('/api/users/join', async (req, res) => {
     let user = await User.findOneAndUpdate(
       { username },
       { lastSeen: new Date() },
-      { new: true, upsert: true, setDefaultsOnInsert: true }
+      { returnDocument: 'after', upsert: true, setDefaultsOnInsert: true }
     );
 
     res.json({ success: true, user });
@@ -165,4 +165,21 @@ function getOnlineInRoom(room) {
 
 
 const PORT = process.env.PORT || 3000;
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received. Closing server...');
+  server.close(() => {
+    mongoose.connection.close(false, () => {
+      console.log('MongoDB connection closed.');
+      process.exit(0);
+    });
+  });
+});
+
+process.on('SIGINT', () => {
+  server.close(() => {
+    mongoose.connection.close(false, () => {
+      process.exit(0);
+    });
+  });
+});
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
