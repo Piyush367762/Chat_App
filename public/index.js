@@ -1,5 +1,5 @@
 
-const API = 'http://localhost:3000';
+const API = process.env.REACT_APP_API_URL;
 let socket, currentUser, currentRoom = 'general';
 let typingTimeout;
 const COLORS = ['#7c6af7','#f472b6','#34d399','#60a5fa','#fb923c','#a78bfa','#38bdf8'];
