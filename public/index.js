@@ -38,7 +38,7 @@ async function joinChat() {
 }
 
 function initSocket() {
-  socket = io();
+  socket = io(API);
 
   socket.on('connect', () => {
     socket.emit('join', { username: currentUser, room: currentRoom });
