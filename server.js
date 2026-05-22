@@ -1,17 +1,15 @@
 import express from 'express';
 import mongoose from 'mongoose';
 import path from 'path';
-import Routes from 'route.js';
-import model from 'model.js';
-import controller from 'controller.js';
+import Routes from './route.js';
+// import model from 'model.js';
+// import controller from 'controller.js';
 const app = express();
-
-app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
+// app.use(express.static(path.join(__dirname, 'public')));
 
-const MONGO_URI = process.env.MONGO_URI;
-
+// const MONGO_URI = process.env.MONGO_URI;
+app.use("/api",Routes);
 if (!MONGO_URI) {
   console.error('FATAL: MONGO_URI is not set');
   process.exit(1);

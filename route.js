@@ -1,7 +1,7 @@
 
 import { Router } from "express";
-
-Router.get('/api/health', (req, res) => {
+const router = Router();
+router.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
     mongo: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
@@ -9,7 +9,7 @@ Router.get('/api/health', (req, res) => {
   });
 });
 
-Router.post('/api/users/join', async (req, res) => {
+router.post('/users/join', async (req, res) => {
   try {
     const { username } = req.body;
     if (!username) return res.status(400).json({ error: 'Username required' });
@@ -24,7 +24,7 @@ Router.post('/api/users/join', async (req, res) => {
   }
 });
 
-Router.get('/api/messages/:room', async (req, res) => {
+router.get('/messages/:room', async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 50;
     const messages = await Message.find({ room: req.params.room })
@@ -35,7 +35,7 @@ Router.get('/api/messages/:room', async (req, res) => {
   }
 });
 
-Router.get('/api/rooms', async (req, res) => {
+router.get('/rooms', async (req, res) => {
   try {
     const rooms = await Message.distinct('room');
     if (!rooms.includes('general')) rooms.unshift('general');
@@ -45,4 +45,4 @@ Router.get('/api/rooms', async (req, res) => {
   }
 });
 
-export default 'router';
+export default router;
