@@ -1,9 +1,15 @@
 import express from 'express';
+import cors from 'cors';
+import http from 'http';
 import mongoose from 'mongoose';
 import path from 'path';
 import Routes from './route.js';
 // import model from 'model.js';
-// import controller from 'controller.js';
+import sokcetController from 'controller.js';
+
+
+
+const server = http.createServer(app);
 const app = express();
 app.use(express.json());
 // app.use(express.static(path.join(__dirname, 'public')));
@@ -20,6 +26,10 @@ mongoose.connect(MONGO_URI)
 
 mongoose.connection.on('disconnected', () => console.log('MongoDB disconnected'));
 mongoose.connection.on('reconnected',  () => console.log('MongoDB reconnected'));
+
+
+sokcetController(server);
+
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, '0.0.0.0', () => console.log(`Server running on port ${PORT}`));

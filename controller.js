@@ -1,19 +1,20 @@
-import cors from 'cors';
-import http from 'http';
-import Server from 'socket.io';
 
+import Message from "model.js";
+import {Server} from 'socket.io';
 
-const server = http.createServer(app);
-const io = new Server(server, {
+const onlineUsers = new Map();
+
+export default function sokcetController(server) {const io = new Server(server, {
   cors: { origin: '*', methods: ['GET', 'POST'] }
 });
-const onlineUsers = new Map();
+
 
 io.on('connection', (socket) => {
   console.log('Socket connected:', socket.id);
 
   socket.on('join', async ({ username, room = 'general' }) => {
     socket.join(room);
+
     onlineUsers.set(socket.id, { username, room });
     const messages = await Message.find({ room })
       .sort({ timestamp: -1 }).limit(50).lean();
@@ -21,6 +22,8 @@ io.on('connection', (socket) => {
     io.to(room).emit('userJoined', { username, room });
     io.to(room).emit('onlineUsers', getOnlineInRoom(room));
   });
+
+
 
   socket.on('message', async ({ username, text, room = 'general', avatar = '' }) => {
     try {
@@ -30,6 +33,8 @@ io.on('connection', (socket) => {
       socket.emit('error', { message: 'Failed to save message' });
     }
   });
+
+
 
   socket.on('switchRoom', async ({ username, oldRoom, newRoom }) => {
     socket.leave(oldRoom);
@@ -62,7 +67,8 @@ function getOnlineInRoom(room) {
     .map(u => u.username);
 }
 
-// ─── Graceful Shutdown ────────────────────────────────────────────────────────
+
+
 function shutdown(signal) {
   console.log(`${signal} received, shutting down...`);
   server.close(() => {
@@ -72,3 +78,4 @@ function shutdown(signal) {
 }
 process.on('SIGTERM', () => shutdown('SIGTERM'));
 process.on('SIGINT',  () => shutdown('SIGINT'));
+}
