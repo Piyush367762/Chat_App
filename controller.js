@@ -1,5 +1,6 @@
 
-import Message from "model.js";
+import mongoose from 'mongoose';
+import { Message } from "./model.js";
 import {Server} from 'socket.io';
 
 const onlineUsers = new Map();

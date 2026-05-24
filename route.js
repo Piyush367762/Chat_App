@@ -1,7 +1,10 @@
 
 import { Router } from "express";
+import mongoose from 'mongoose';
+import { User, Message } from './model.js';
+
 const router = Router();
-router.get('/api/health', (req, res) => {
+router.get('/health', (req, res) => {
   res.json({
     status: 'ok',
     mongo: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
