@@ -1,16 +1,31 @@
-
 import mongoose from 'mongoose';
 import { Message } from "./model.js";
-import {Server} from 'socket.io';
+import { Server } from 'socket.io';
+import { createClient } from 'redis';
+import { createAdapter } from '@socket.io/redis-adapter';
 
 const onlineUsers = new Map();
 
-export default function sokcetController(server) {const io = new Server(server, {
-  cors: { origin: '*', methods: ['GET', 'POST'] }
-});
+export default async function sokcetController(server) {
+  const io = new Server(server, {
+    cors: { origin: '*', methods: ['GET', 'POST'] }
+  });
 
+  if (process.env.REDIS_URL) {
+    const pubClient = createClient({ url: process.env.REDIS_URL });
+    const subClient = pubClient.duplicate();
 
-io.on('connection', (socket) => {
+    await Promise.all([
+      pubClient.connect(),
+      subClient.connect()
+    ]);
+
+    io.adapter(createAdapter(pubClient, subClient));
+    console.log('Socket.IO Redis adapter connected');
+  }
+
+  io.on('connection', (socket) => {
+    io.on('connection', (socket) => {
   console.log('Socket connected:', socket.id);
 
   socket.on('join', async ({ username, room = 'general' }) => {
@@ -68,8 +83,6 @@ function getOnlineInRoom(room) {
     .map(u => u.username);
 }
 
-
-
 function shutdown(signal) {
   console.log(`${signal} received, shutting down...`);
   server.close(() => {
@@ -80,3 +93,8 @@ function shutdown(signal) {
 process.on('SIGTERM', () => shutdown('SIGTERM'));
 process.on('SIGINT',  () => shutdown('SIGINT'));
 }
+  )};
+
+
+
+
