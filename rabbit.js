@@ -1,7 +1,7 @@
 import amqp from 'amqplib';
 
 let channel;
-
+//(amqp)=> advanced message queuing protocol
 export async function initRabbit() {
   if (!process.env.RABBITMQ_URL) return null;
 
@@ -23,3 +23,4 @@ export function publishChatMessage(message) {
     { persistent: true }
   );
 }
+

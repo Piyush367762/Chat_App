@@ -7,7 +7,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import Routes from './route.js';
 import sokcetController from './controller.js';
-
+import { initRabbit } from './rabbit.js';
 const app = express();
 const server = http.createServer(app);
 const __filename = fileURLToPath(import.meta.url);
@@ -35,4 +35,7 @@ sokcetController(server);
 
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, '0.0.0.0', () => console.log(`Server running on port ${PORT}`));
+server.listen(PORT, '0.0.0.0', async () => {console.log(`Server running on port ${PORT}`)
+
+  await initRabbit();
+});
