@@ -3,7 +3,7 @@ import { Message } from "./model.js";
 import { Server } from 'socket.io';
 import { createClient } from 'redis';
 import { createAdapter } from '@socket.io/redis-adapter';
-
+//connect with redis
 const onlineUsers = new Map();
 
 export default async function sokcetController(server) {
